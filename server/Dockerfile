@@ -20,4 +20,4 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "node dist/src/server.js"]
+CMD ["sh", "-c", "node dist/server.js"]

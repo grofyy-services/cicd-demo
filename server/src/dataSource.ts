@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { Product } from "./entity/Product";
+import path from "path";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -14,7 +15,12 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || "app",
   database: process.env.DB_NAME || "product_catalog",
   entities: [Product],
-  migrations: [isProd ? "dist/migrations/*.js" : "src/migrations/*.ts"],
+   // ✅ key fix
+   migrations: [
+    isProd
+      ? path.join(__dirname, "migrations", "*.js") // dist/migrations/*.js
+      : path.join(process.cwd(), "src", "migrations", "*.ts"),
+  ],
   synchronize: false,
   logging: false,
   ssl:  { rejectUnauthorized: false } 
