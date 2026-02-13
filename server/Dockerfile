@@ -20,5 +20,4 @@ COPY --from=build /app/dist ./dist
 
 EXPOSE 8080
 
-# ✅ Run migrations at container start, then start API
-CMD ["sh", "-c", "node ./node_modules/typeorm/cli.js -d dist/dataSource.js migration:run && node dist/server.js"]
+CMD ["sh", "-c", "node dist/src/server.js"]
