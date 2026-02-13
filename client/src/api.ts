@@ -22,3 +22,24 @@ export async function getProduct(id: string): Promise<Product> {
   if (!res.ok) throw new Error("Failed to load product");
   return res.json();
 }
+
+export type CreateProductPayload = {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  currency: string;
+};
+
+export async function createProduct(payload: CreateProductPayload): Promise<Product> {
+  const res = await fetch(`${BASE}/api/products`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to create product");
+  }
+  return res.json();
+}

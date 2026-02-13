@@ -16,11 +16,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || "product_catalog",
   entities: [Product],
    // ✅ key fix
-   migrations: [
-    isProd
-      ? path.join(__dirname, "migrations", "*.js") // dist/migrations/*.js
-      : path.join(process.cwd(), "src", "migrations", "*.ts"),
-  ],
+   migrations: [path.join(__dirname, "migrations", "*.js")],
   synchronize: false,
   logging: false,
   ssl:  { rejectUnauthorized: false } 
