@@ -1,0 +1,24 @@
+# ---- Build stage ----
+FROM node:20-alpine AS build
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install
+
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=build /app/package.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+
+EXPOSE 8080
+
+# ✅ Run migrations at container start, then start API
+CMD ["sh", "-c", "node ./node_modules/typeorm/cli.js -d dist/dataSource.js migration:run && node dist/server.js"]

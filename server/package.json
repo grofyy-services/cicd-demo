@@ -1,0 +1,39 @@
+{
+  "name": "product-api",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "lint": "eslint src --ext .ts",
+    "migration:run:dev": "typeorm-ts-node-commonjs -d src/dataSource.ts migration:run",
+    "migration:revert:dev": "typeorm-ts-node-commonjs -d src/dataSource.ts migration:revert",
+    "migration:show:dev": "typeorm-ts-node-commonjs -d src/dataSource.ts migration:show",
+    "migration:generate": "typeorm-ts-node-commonjs -d src/dataSource.ts migration:generate",
+    "migration:create": "typeorm-ts-node-commonjs migration:create src/migrations",
+    "migration:run": "typeorm -d dist/dataSource.js migration:run",
+    "migration:show": "typeorm -d dist/dataSource.js migration:show"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5"
+  }
+}
