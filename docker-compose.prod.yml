@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: grofyy/product-api:latest
+    image: groffy/product-api:latest
     container_name: product_api
     environment:
       NODE_ENV: production
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: grofyy/product-web:latest
+    image: groffy/product-web:latest
     container_name: product_web
     depends_on:
       - api
