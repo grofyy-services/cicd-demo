@@ -21,7 +21,7 @@ const createProductSchema = z.object({
  */
 productRouter.get("/", async (_req, res) => {
   const products = await repo.find({
-    order: { createdAt: "DESC" },
+    order: { createdAt: "DESC" }
   });
   res.json(products);
 });

@@ -1,23 +1,25 @@
+import "./loadEnv"; // load .env.local so DATABASE_URL is set when CLI uses this file (e.g. migration:generate)
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { Product } from "./entity/Product";
 import path from "path";
 
-const isProd = process.env.NODE_ENV === "production";
+const root = path.resolve(__dirname, ".."); // server/ in dev, /app in prod
+console.log( "root", root);
 
-// ✅ Use DATABASE_URL when provided, else use individual DB_* fields
+// Dev: ts-node runs from src/ → load .ts from src/migrations. Prod: node runs from dist/src/ → load .js from dist/src/migrations
+const migrationsDir = process.env.NODE_ENV === "production"
+  ? path.join(root, "dist", "migrations", "*.js")
+  : path.join(root, "src", "migrations", "*.ts");
+
+console.log( "migrationsDir", migrationsDir);
 export const AppDataSource = new DataSource({
   type: "postgres",
-  url: 'postgresql://postgres:12345678@client-rds-postgres-prod.cd02yeymmv4n.us-east-2.rds.amazonaws.com:5432/productcatelog', // ✅ full postgres url goes here
-  host: process.env.DB_HOST || "localhost", // used only if url not set
-  port: Number(process.env.DB_PORT || 5432),
-  username: process.env.DB_USER || "app",
-  password: process.env.DB_PASSWORD || "app",
-  database: process.env.DB_NAME || "product_catalog",
+  url: process.env.DATABASE_URL,
   entities: [Product],
-   // ✅ key fix
-   migrations: [path.join(__dirname, "migrations", "*.js")],
+  migrations: [migrationsDir],
   synchronize: false,
   logging: false,
-  ssl:  { rejectUnauthorized: false } 
+  // RDS requires SSL; local Docker does not. Set DB_SSL=true in .env.local for RDS.
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
 });

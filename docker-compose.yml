@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: product_catalog
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -25,13 +25,14 @@ services:
     container_name: product_api
     environment:
       NODE_ENV: production
+      DATABASE_URL: postgres://app:app@db:5432/product_catalog
       PORT: 8080
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: app
       DB_PASSWORD: app
       DB_NAME: product_catalog
-      CORS_ORIGIN: http://localhost:5173
+      CORS_ORIGIN: '*'
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +49,7 @@ services:
     depends_on:
       - api
     ports:
-      - "5173:80"
+      - "3000:80"
 
 volumes:
   pgdata:

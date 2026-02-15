@@ -21,13 +21,10 @@ services:
     image: groffy/product-api:latest
     container_name: product_api
     environment:
+      DATABASE_URL: 'postgresql://app:app@db:5432/product_catalog'
       NODE_ENV: production
       PORT: 8080
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: app
-      DB_PASSWORD: app
-      DB_NAME: product_catalog
+      CORS_ORIGIN: '*'
     depends_on:
       db:
         condition: service_healthy

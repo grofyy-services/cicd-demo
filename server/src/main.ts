@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./loadEnv"; // must be first: runs before dataSource so DATABASE_URL is set
 import { AppDataSource } from "./dataSource";
 import { createApp } from "./app";
 
