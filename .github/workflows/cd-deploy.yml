@@ -36,11 +36,12 @@ jobs:
 
       - name: Build & push WEB
         uses: docker/build-push-action@v6
+        env:
+          VITE_API_BASE_URL: http://18.223.32.43:8080
         with:
           context: ./client
           push: true
-          build-args: |
-            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          build-args: VITE_API_BASE_URL=${{ env.VITE_API_BASE_URL }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/product-web:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/product-web:${{ github.sha }}

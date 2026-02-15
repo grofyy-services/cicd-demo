@@ -32,11 +32,11 @@ services:
       - "8080:8080"
     restart: unless-stopped
 
+  # API URL is baked in at build time. Build with:
+  #   docker build --build-arg VITE_API_BASE_URL=https://your-api-host:8080 -t groffy/product-web:latest ./client
   web:
     image: groffy/product-web:latest
     container_name: product_web
-    environment:
-      VITE_API_BASE_URL: http://18.223.32.43:8080
     depends_on:
       - api
     ports:
