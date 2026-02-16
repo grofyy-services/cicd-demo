@@ -12,7 +12,6 @@ const migrationsDir = process.env.NODE_ENV === "production"
   ? path.join(root, "dist", "migrations", "*.js")
   : path.join(root, "src", "migrations", "*.ts");
 
-console.log( "migrationsDir", migrationsDir);
 export const AppDataSource = new DataSource({
   type: "postgres",
   url: process.env.DATABASE_URL,

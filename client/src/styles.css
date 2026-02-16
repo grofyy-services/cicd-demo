@@ -126,6 +126,8 @@ a { color: inherit; text-decoration: none; }
 .details-top { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
 .details-title { margin: 0; font-size: 22px; }
 .details-price { margin: 10px 0; font-size: 20px; font-weight: 700; }
+.details-actions { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+.details-actions .error-text { color: #c00; font-size: 14px; }
 .details-desc { color: #444; line-height: 1.55; }
 .details-meta {
   margin-top: 14px;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getProduct, type Product } from "../api";
+import { getProduct, buyProduct, type Product } from "../api";
 
 function formatMoney(value: string, currency: string) {
   const num = Number(value);
@@ -15,6 +15,8 @@ export default function ProductDetails() {
   const [item, setItem] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [buying, setBuying] = useState(false);
+  const [buyErr, setBuyErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -31,6 +33,20 @@ export default function ProductDetails() {
       }
     })();
   }, [id]);
+
+  async function handleBuy() {
+    if (!id || !item || item.stock < 1) return;
+    try {
+      setBuying(true);
+      setBuyErr(null);
+      const updated = await buyProduct(id);
+      setItem(updated);
+    } catch (e: any) {
+      setBuyErr(e?.message || "Purchase failed");
+    } finally {
+      setBuying(false);
+    }
+  }
 
   if (loading) return <div className="panel">Loading…</div>;
   if (err) return <div className="panel error">Error: {err}</div>;
@@ -59,6 +75,18 @@ export default function ProductDetails() {
 
           <div className="details-price">
             {formatMoney(item.price, item.currency)}
+          </div>
+
+          <div className="details-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleBuy}
+              disabled={item.stock < 1 || buying}
+            >
+              {buying ? "Buying…" : "Buy"}
+            </button>
+            {buyErr && <span className="error-text">{buyErr}</span>}
           </div>
 
           <p className="details-desc">{item.description}</p>

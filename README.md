@@ -1,3 +1,114 @@
+# Product Catalog + Invoice Service
+
+## Kafka & Buy Flow
+
+### Architecture
+
+- **API** (product server): Producer. Handles product CRUD and Buy API.
+- **Invoice Service**: Consumer. Listens to buy events and creates invoices in `invoice_db`.
+- **Kafka**: Message broker. Topic `product.buy` carries buy events.
+
+### How to Run Kafka (and the whole stack)
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+- **Postgres** (port 5433) — databases `product_db` and `invoice_db`
+- **Kafka** (port 9092) — Bitnami Kafka in KRaft mode (no Zookeeper)
+- **API** (port 8080) — Product API + Kafka producer
+- **Invoice Service** — Kafka consumer, creates invoices on buy events
+- **Web** (port 3000) — Vite frontend
+
+### Buy Flow
+
+1. User clicks **Buy** on a product on the products list page.
+2. Frontend calls `POST /api/products/:id/buy`.
+3. API:
+   - Checks product exists and has stock
+   - Decrements `stock` by 1
+   - Publishes a buy event to Kafka topic `product.buy`
+   - Returns updated product
+4. Invoice service:
+   - Consumes the buy event from `product.buy`
+   - Inserts a row into `invoices` in `invoice_db`
+
+### Buy Event Payload (Kafka)
+
+```json
+{
+  "productId": "uuid",
+  "productTitle": "Product Name",
+  "price": "19.99",
+  "currency": "USD",
+  "quantity": 1,
+  "boughtAt": "2025-02-15T12:00:00.000Z"
+}
+```
+
+### Local Development (without full Docker)
+
+If you run API and Invoice Service locally with `npm run dev`:
+
+1. Start Postgres and Kafka:
+
+   ```bash
+   docker compose up db kafka
+   ```
+
+2. Set env in `server/.env.local` and `invoice-service/.env.local`:
+
+   ```
+   DATABASE_URL=postgres://app:app@localhost:5433/product_catalog   # for server
+   DATABASE_URL=postgres://app:app@localhost:5433/invoice_db        # for invoice-service
+   KAFKA_BROKERS=localhost:9092
+   ```
+
+3. Create `invoice_db` (only needed once, if init script didn’t run):
+
+   ```bash
+   docker compose exec db psql -U app -d postgres -c "CREATE DATABASE invoice_db;"
+   ```
+
+4. Run migrations:
+
+   ```bash
+   cd server && npm run migration:up
+   cd invoice-service && npm run migration:up
+   ```
+
+5. Start API and Invoice Service:
+
+   ```bash
+   cd server && npm run dev
+   cd invoice-service && npm run dev
+   ```
+
+6. Run the client (Vite) separately.
+
+### Verify Kafka
+
+```bash
+# List topics
+docker compose exec kafka kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+# Consume buy events (optional)
+docker compose exec kafka kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic product.buy \
+  --from-beginning
+```
+
+### Verify Invoices
+
+```bash
+docker compose exec db psql -U app -d invoice_db -c "SELECT * FROM invoices;"
+```
+
+---
+
 ✅ Run migrations in dev using TS directly (no need to build first)
 ✅ Automatically GENERATE migration by comparing Entities vs DB schema
 Example: npm run migration:generate -- -n AddDiscountToProducts
@@ -151,3 +262,26 @@ product_catalog=#
 
 
  docker exec -it 203e7e6b835a psql -U app -d product_catalog
+
+
+
+
+
+ docker compose up -d db kafka kafka-ui  
+
+
+
+
+
+
+
+ # How to run FE 
+1. Run docker containers for db, kafka, kafka-ui -- docker compose up -d db kafka kafka-ui
+2. npm run dev
+
+# How to run BE
+1. npm run dev
+
+# How to run migrations
+1. npm run migration:generate -- name
+2. npm run migration:up

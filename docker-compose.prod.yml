@@ -3,25 +3,93 @@ version: "3.9"
 services:
   db:
     image: postgres:16-alpine
-    container_name: product_db
+    container_name: product_catalog_cluster
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
-      POSTGRES_DB: product_catalog
+      POSTGRES_DB: product_db
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d product_catalog"]
+      test: ["CMD-SHELL", "pg_isready -U app -d product_db"]
       interval: 5s
       timeout: 5s
       retries: 20
     restart: unless-stopped
 
-  api:
-    image: groffy/product-api:latest
-    container_name: product_api
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: product_catalog_kafka
+    ports:
+      - "9092:9092"   # host access (your Mac)
+      - "29092:29092" # optional: host access to internal listener (not required, but handy)
     environment:
-      DATABASE_URL: 'postgresql://app:app@db:5432/product_catalog'
+      # KRaft (single node)
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@product_catalog_kafka:9093"
+
+      # Listeners
+      # - PLAINTEXT_HOST is for host machine (localhost:9092)
+      # - PLAINTEXT is for docker network (product_kafka:29092)
+      # - CONTROLLER is internal kraft controller
+      KAFKA_LISTENERS: "PLAINTEXT_HOST://:9092,PLAINTEXT://:29092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT_HOST://localhost:9092,PLAINTEXT://product_catalog_kafka:29092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      # Dev-safe defaults (single broker)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server product_catalog_kafka:29092 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: product_catalog_kafka_ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "9094:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: product_catalog_kafka:29092
+
+
+  invoice-service:
+    image: groffy/invoice-service:latest
+    container_name: product_catalog_invoice_service
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://app:app@db:5432/invoice_db
+
+      # Kafka inside docker
+      KAFKA_BROKERS: product_catalog_kafka:29092
+      KAFKA_CLIENT_ID: invoice-service
+      KAFKA_GROUP_ID: invoice-service-group
+      KAFKA_TOPIC_PRODUCTS: products.created
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+
+  server:
+    image: groffy/product-server:latest
+    container_name: product_catalog_server
+    environment:
+      DATABASE_URL: 'postgresql://app:app@db:5432/product_db'
       NODE_ENV: production
       PORT: 8080
       CORS_ORIGIN: '*'
@@ -36,12 +104,13 @@ services:
   #   docker build --build-arg VITE_API_BASE_URL=https://your-api-host:8080 -t groffy/product-web:latest ./client
   web:
     image: groffy/product-web:latest
-    container_name: product_web
+    container_name: product_catalog_web
     depends_on:
-      - api
+      - server
     ports:
       - "80:80"
     restart: unless-stopped
 
 volumes:
   pgdata:
+  kafka_data:

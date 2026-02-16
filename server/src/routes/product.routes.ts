@@ -62,3 +62,34 @@ productRouter.get("/:id", async (req, res) => {
   }
   res.json(product);
 });
+
+/**
+ * POST /api/products/:id/buy
+ * reduce stock by 1, emit buy event to Kafka for invoice creation
+ */
+productRouter.post("/:id/buy", async (req, res) => {
+  const product = await repo.findOne({ where: { id: req.params.id } });
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  if (product.stock < 1) {
+    return res.status(400).json({ message: "Product out of stock" });
+  }
+
+  product.stock -= 1;
+  await repo.save(product);
+
+  const { publishBuyEvent } = await import("../kafka");
+  await publishBuyEvent({
+    productId: product.id,
+    productTitle: product.title,
+    price: product.price,
+    currency: product.currency,
+    quantity: 1,
+    boughtAt: new Date().toISOString(),
+  });
+
+  res.json({ success: true, product });
+});

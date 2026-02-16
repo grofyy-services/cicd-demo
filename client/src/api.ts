@@ -23,6 +23,13 @@ export async function getProduct(id: string): Promise<Product> {
   return res.json();
 }
 
+export async function buyProduct(id: string): Promise<Product> {
+  const res = await fetch(`${BASE}/api/products/${id}/buy`, { method: "POST" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || "Failed to buy product");
+  return data.product;
+}
+
 export type CreateProductPayload = {
   name: string;
   description: string;

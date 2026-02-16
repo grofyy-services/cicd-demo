@@ -7,7 +7,10 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 COPY package.json ./
 RUN npm install
-COPY . .
+COPY src ./src
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig.json ./
 RUN npm run build
 
 # ---- Serve ----
