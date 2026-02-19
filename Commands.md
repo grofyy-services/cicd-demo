@@ -51,3 +51,25 @@ docker compose -f docker-compose.prod.yml down -v
 
 
 docker ps -a --filter name=product_catalog_kafka  - to see killed containers
+
+
+
+
+
+----- after ec2 create -------
+
+
+sudo mkdir -p /opt/product-app
+sudo chown -R ec2-user:ec2-user /opt/product-app   # or ubuntu:ubuntu
+
+install docker & compose 
+
+
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+docker compose version
