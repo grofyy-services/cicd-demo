@@ -130,7 +130,6 @@ services:
       NODE_ENV: production
       PORT: 8080
       CORS_ORIGIN: '*'
-    depends_on:
     ports:
       - "8080:8080"
     restart: unless-stopped
