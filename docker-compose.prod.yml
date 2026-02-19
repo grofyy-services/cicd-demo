@@ -1,22 +1,21 @@
 version: "3.9"
 
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: product_catalog_cluster
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: product_db
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d product_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: product_catalog_cluster
+  #   environment:
+  #     POSTGRES_USER: app
+  #     POSTGRES_PASSWORD: app
+  #     POSTGRES_DB: product_db
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U app -d product_db"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 20
+  #   restart: unless-stopped
 
   kafka:
     image: apache/kafka:latest
@@ -107,37 +106,31 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: product_catalog_kafka:29092
 
-
   invoice-service:
     image: groffy/invoice-service:latest
-    container_name: product_catalog_invoice_service
+    container_name: invoice_service
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://app:app@db:5432/invoice_db
-
+      DATABASE_URL: postgresql://postgres:12345678@client-rds-postgres-prod.cd02yeymmv4n.us-east-2.rds.amazonaws.com:5432/cicd_demo_products_db
       # Kafka inside docker
       KAFKA_BROKERS: product_catalog_kafka:29092
       KAFKA_CLIENT_ID: invoice-service
       KAFKA_GROUP_ID: invoice-service-group
       KAFKA_TOPIC_PRODUCTS: products.created
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_healthy
 
 
-  server:
-    image: groffy/product-server:latest
-    container_name: product_catalog_server
+  product-service:
+    image: groffy/product-service:latest
+    container_name: product_service
     environment:
-      DATABASE_URL: 'postgresql://app:app@db:5432/product_db'
+      DATABASE_URL: 'postgresql://postgres:12345678@client-rds-postgres-prod.cd02yeymmv4n.us-east-2.rds.amazonaws.com:5432/cicd_demo_products_db'
       NODE_ENV: production
       PORT: 8080
       CORS_ORIGIN: '*'
     depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -146,9 +139,9 @@ services:
   #   docker build --build-arg VITE_API_BASE_URL=https://your-api-host:8080 -t groffy/product-web:latest ./client
   web:
     image: groffy/product-web:latest
-    container_name: product_catalog_web
+    container_name: web
     depends_on:
-      - server
+      - product-service
     ports:
       - "80:80"
     restart: unless-stopped
