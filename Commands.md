@@ -48,3 +48,6 @@ cd /opt/product-app
 docker compose -f docker-compose.prod.yml down -v
 
  
+
+
+docker ps -a --filter name=product_catalog_kafka  - to see killed containers
