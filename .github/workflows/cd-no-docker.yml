@@ -26,7 +26,7 @@ jobs:
 
       - name: Install API deps
         working-directory: server
-        run: npm ci
+        run: npm install
 
       - name: Build API (dist)
         working-directory: server
@@ -42,7 +42,7 @@ jobs:
 
       - name: Install WEB deps
         working-directory: client
-        run: npm ci
+        run: npm install
 
       - name: Build WEB (dist)
         working-directory: client
@@ -114,7 +114,7 @@ jobs:
             cd /opt/product-app/current-api
 
             # install prod deps only
-            npm ci --omit=dev || npm install --omit=dev
+            npm install --omit=dev || npm install --omit=dev
 
             # restart systemd service
             sudo systemctl daemon-reload || true
