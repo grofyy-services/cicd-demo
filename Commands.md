@@ -1,3 +1,16 @@
+ # How to run FE 
+1. Run docker containers for db, kafka, kafka-ui -- docker compose up -d db kafka kafka-ui
+2. npm run dev
+
+# How to run BE
+1. npm run dev
+
+# How to run migrations
+1. npm run migration:generate -- name
+2. npm run migration:up
+
+
+
 docker compose build     
 --  first we need to build the docker images from our docker files ( only builds the images for given docker files , not for kafka and postgres as they are already images)
 
@@ -29,7 +42,9 @@ docker ps
     5. exit -- to exit from current 
 
 
-cd ~/Downloads && ssh -i product-app.pem ec2-user@18.223.32.43 
+cd ~/Downloads && ssh -i product-app.pem ec2-user@18.223.32.43    --- ssh to ec2
 
 cd /opt/product-app
 docker compose -f docker-compose.prod.yml down -v
+
+ 
