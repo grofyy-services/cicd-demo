@@ -1,21 +1,21 @@
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: product_catalog_cluster
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: product_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./docker/postgres-init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d product_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: product_catalog_cluster
+  #   environment:
+  #     POSTGRES_USER: app
+  #     POSTGRES_PASSWORD: app
+  #     POSTGRES_DB: product_db
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #     - ./docker/postgres-init:/docker-entrypoint-initdb.d
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U app -d product_db"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 20
 
   kafka:
     image: apache/kafka:latest
@@ -64,23 +64,21 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: product_catalog_kafka:29092
 
-  server:
+  product-service:
     build:
-      context: ./server
+      context: ./product-service
       dockerfile: Dockerfile
-    container_name: product_catalog_server
+    container_name: product_service
     environment:
       NODE_ENV: production
       PORT: 8080
-      DATABASE_URL: postgres://app:app@db:5432/product_db
+      DATABASE_URL: postgresql://postgres:12345678@client-rds-postgres-prod.cd02yeymmv4n.us-east-2.rds.amazonaws.com:5432/cicd_demo_products_db
 
       # Kafka inside docker
       KAFKA_BROKERS: product_catalog_kafka:29092
-      KAFKA_CLIENT_ID: product_catalog_server
+      KAFKA_CLIENT_ID: product_service
       KAFKA_TOPIC_PRODUCTS: products.created
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     ports:
@@ -90,10 +88,10 @@ services:
     build:
       context: ./invoice-service
       dockerfile: Dockerfile
-    container_name: product_catalog_invoice_service
+    container_name: invoice_service
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://app:app@db:5432/invoice_db
+      DATABASE_URL: postgresql://postgres:12345678@client-rds-postgres-prod.cd02yeymmv4n.us-east-2.rds.amazonaws.com:5432/cicd_demo_invoices_db
 
       # Kafka inside docker
       KAFKA_BROKERS: product_catalog_kafka:29092
@@ -101,8 +99,6 @@ services:
       KAFKA_GROUP_ID: invoice-service-group
       KAFKA_TOPIC_PRODUCTS: products.created
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_healthy
 
@@ -112,9 +108,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: http://localhost:8080
-    container_name: product_catalog_web
+    container_name: web
     depends_on:
-      - server
+      - product-service
     ports:
       - "3000:80"
 

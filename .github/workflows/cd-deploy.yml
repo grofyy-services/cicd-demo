@@ -25,14 +25,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & push Server
+      - name: Build & push Product Service
         uses: docker/build-push-action@v6
         with:
-          context: ./server
+          context: ./product-service
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/product-server:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/product-server:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/product-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/product-service:${{ github.sha }}
 
       - name: Build & push Invoice Service
         uses: docker/build-push-action@v6
