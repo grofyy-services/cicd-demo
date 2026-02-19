@@ -42,7 +42,9 @@ docker ps
     5. exit -- to exit from current 
 
 
-cd ~/Downloads && ssh -i product-app.pem ec2-user@18.223.32.43 
+cd ~/Downloads && ssh -i product-app.pem ec2-user@18.223.32.43    --- ssh to ec2
 
 cd /opt/product-app
 docker compose -f docker-compose.prod.yml down -v
+
+ 

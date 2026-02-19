@@ -25,27 +25,69 @@ services:
       - "9092:9092"   # host access (your Mac)
       - "29092:29092" # optional: host access to internal listener (not required, but handy)
     environment:
-      # KRaft (single node)
+      # ---------------------------
+      # KRaft (Kafka without ZooKeeper)
+      # ---------------------------
+
+      # Unique numeric ID for this Kafka node inside the cluster
+      # In single-node dev, "1" is fine.
       KAFKA_NODE_ID: "1"
+      # What roles this process plays:
+      # - broker     = stores/serves topics, handles producers/consumers
+      # - controller = manages metadata & cluster leadership (KRaft replacement for ZooKeeper)
+      # Single-node dev often runs both roles in one container.
       KAFKA_PROCESS_ROLES: "broker,controller"
+      # Defines the controller quorum voters (who can vote for controller leadership).
+      # Format: "<node_id>@<host>:<controller_port>"
+      # Here: node 1 is reachable at product_catalog_kafka:9093 on the Docker network.
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@product_catalog_kafka:9093"
 
-      # Listeners
-      # - PLAINTEXT_HOST is for host machine (localhost:9092)
-      # - PLAINTEXT is for docker network (product_kafka:29092)
-      # - CONTROLLER is internal kraft controller
+      # ---------------------------
+      # Listeners (where Kafka accepts connections)
+      # ---------------------------
+
+      # Which listener endpoints Kafka binds to inside the container.
+      # - PLAINTEXT_HOST://:9092  -> for connections coming from your host machine (via port mapping)
+      # - PLAINTEXT://:29092      -> for other Docker containers (inside docker network)
+      # - CONTROLLER://:9093      -> internal KRaft controller communication
       KAFKA_LISTENERS: "PLAINTEXT_HOST://:9092,PLAINTEXT://:29092,CONTROLLER://:9093"
+      # What addresses Kafka tells clients to use when they connect (very important).
+      # - PLAINTEXT_HOST://localhost:9092
+      #     Host machine apps (your laptop) connect using localhost because port 9092 is published.
+      # - PLAINTEXT://product_catalog_kafka:29092
+      #     Other containers connect using the Docker service/container name + internal port.
       KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT_HOST://localhost:9092,PLAINTEXT://product_catalog_kafka:29092"
+      # Maps each listener name to a security protocol.
+      # Here everything is PLAINTEXT (no TLS, no SASL) — good for local/dev only.
+      # ListenerName:Protocol
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      # Which listener name Kafka should use for controller traffic in KRaft mode.
+      # Must match the listener name used in KAFKA_LISTENERS.
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      # Which listener name brokers use to talk to each other (replication, metadata, etc.).
+      # In single broker dev, still required. We use the Docker-network listener (PLAINTEXT).
       KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
 
-      # Dev-safe defaults (single broker)
+      # ---------------------------
+      # Dev-safe defaults (single broker cluster settings)
+      # ---------------------------
+
+      # Offsets topic stores consumer group offsets.
+      # Replication factor 1 is required for single broker (can't replicate to multiple brokers).
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      # Transaction state log is used for exactly-once semantics (EOS).
+      # Replication factor 1 for single broker.
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      # Minimum in-sync replicas required for transaction log writes.
+      # Must be 1 for single broker; otherwise Kafka will refuse to operate transactions.
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      # Delay before consumer group rebalancing starts (milliseconds).
+      # "0" makes consumer group startup faster in dev (less waiting).
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
     volumes:
+      # Persist Kafka data on the host using a named Docker volume.
+      # Kafka stores topic partitions, logs, and (in KRaft mode) metadata under /var/lib/kafka/data.
+      # Without this, deleting/recreating the container will wipe all Kafka topics and messages.
       - kafka_data:/var/lib/kafka/data
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server product_catalog_kafka:29092 >/dev/null 2>&1 || exit 1"]
