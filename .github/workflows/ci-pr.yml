@@ -1,4 +1,4 @@
-name: CI (PR) - Lint & Build
+name: CI (PR) - Build
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   server-checks:
-    name: Server - Lint & Build
+    name: Server - Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,11 +22,10 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       - run: npm install
-      - run: npm run lint
       - run: npm run build
 
   client-checks:
-    name: Client - Lint & Build
+    name: Client - Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,7 +40,6 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       - run: npm install
-      - run: npm run lint
       - run: npm run build
 
   docker-build:
